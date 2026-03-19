@@ -1,0 +1,115 @@
+package com.example.rummikubcounter.ui.screens
+
+import android.graphics.Bitmap
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.example.rummikubcounter.R
+import com.example.rummikubcounter.model.AnalysisResult
+import com.example.rummikubcounter.ui.components.BoundingBoxOverlay
+import com.example.rummikubcounter.ui.components.ScoreDisplay
+import com.example.rummikubcounter.ui.components.TileCard
+
+@Composable
+fun ResultScreen(
+    bitmap: Bitmap,
+    result: AnalysisResult,
+    onNewPhoto: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onNewPhoto,
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    contentDescription = stringResource(R.string.new_photo),
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Image with bounding boxes
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
+                ) {
+                    BoundingBoxOverlay(
+                        bitmap = bitmap,
+                        tiles = result.tiles
+                    )
+                }
+            }
+
+            // Score display
+            item {
+                ScoreDisplay(
+                    totalScore = result.totalScore,
+                    tileCount = result.tileCount,
+                    processingTimeMs = result.processingTimeMs
+                )
+            }
+
+            // Tile list header
+            if (result.tiles.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Erkannte Steine",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
+            } else {
+                item {
+                    Text(
+                        text = stringResource(R.string.no_detections),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(32.dp)
+                    )
+                }
+            }
+
+            // Tile cards
+            items(result.tiles) { tile ->
+                TileCard(tile = tile)
+            }
+
+            // Bottom spacing
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
+            }
+        }
+    }
+}
