@@ -1,0 +1,84 @@
+package com.example.rummikubcounter.viewmodel
+
+import android.app.Application
+import android.graphics.Bitmap
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.rummikubcounter.ml.ImagePreprocessor
+import com.example.rummikubcounter.ml.NmsProcessor
+import com.example.rummikubcounter.ml.YoloDetector
+import com.example.rummikubcounter.model.AnalysisResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+data class AnalysisUiState(
+    val isLoading: Boolean = false,
+    val result: AnalysisResult? = null,
+    val originalBitmap: Bitmap? = null,
+    val error: String? = null
+)
+
+class AnalysisViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val _uiState = MutableStateFlow(AnalysisUiState())
+    val uiState: StateFlow<AnalysisUiState> = _uiState.asStateFlow()
+
+    private val detector: YoloDetector by lazy { YoloDetector(application) }
+
+    fun analyze(bitmap: Bitmap) {
+        viewModelScope.launch(Dispatchers.Default) {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+
+            try {
+                val startTime = System.currentTimeMillis()
+
+                // Downscale large images to prevent OOM
+                val safeBitmap = ImagePreprocessor.downscaleIfNeeded(bitmap)
+
+                val (inputArray, letterboxInfo) = ImagePreprocessor.preprocess(safeBitmap)
+                val rawOutput = detector.detect(inputArray)
+                val tiles = NmsProcessor.postProcess(
+                    rawOutput, letterboxInfo, safeBitmap.width, safeBitmap.height
+                )
+                val elapsed = System.currentTimeMillis() - startTime
+
+                val totalScore = tiles.sumOf {
+                    if (it.isJoker) 20 else (it.number ?: 0)
+                }
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        originalBitmap = safeBitmap,
+                        result = AnalysisResult(
+                            tiles = tiles,
+                            totalScore = totalScore,
+                            tileCount = tiles.size,
+                            processingTimeMs = elapsed
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Unknown error"
+                    )
+                }
+            }
+        }
+    }
+
+    fun reset() {
+        _uiState.update { AnalysisUiState() }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        detector.close()
+    }
+}
