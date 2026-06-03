@@ -20,12 +20,12 @@ class YoloDetector(context: Context) {
     /**
      * Runs YOLO inference on a preprocessed input tensor.
      *
-     * @param inputArray Float array of shape [1, 3, 640, 640] in CHW format, normalized to 0..1
+     * @param inputArray Float array of shape [1, 3, 1280, 1280] in CHW format, normalized to 0..1
      * @return Transposed output: Array of [8400] predictions, each with 18 values
      *         (cx, cy, w, h, 14 class confidences)
      */
     fun detect(inputArray: FloatArray): Array<FloatArray> {
-        val shape = longArrayOf(1, 3, 640, 640)
+        val shape = longArrayOf(1, 3, 1280, 1280)
         val tensor = OnnxTensor.createTensor(env, FloatBuffer.wrap(inputArray), shape)
 
         val results = session.run(mapOf("images" to tensor))

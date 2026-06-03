@@ -8,20 +8,20 @@ import android.graphics.Paint
 
 data class LetterboxInfo(
     val scale: Float,   // Scale factor applied to original image
-    val padX: Float,    // Horizontal padding in pixels (on 640-size image)
-    val padY: Float     // Vertical padding in pixels (on 640-size image)
+    val padX: Float,    // Horizontal padding in pixels (on 1280-size image)
+    val padY: Float     // Vertical padding in pixels (on 1280-size image)
 )
 
 object ImagePreprocessor {
 
-    private const val INPUT_SIZE = 640
+    private const val INPUT_SIZE = 1280
     private const val PAD_COLOR_VALUE = 114f / 255f
 
     /**
      * Preprocesses a Bitmap into a CHW float tensor for YOLO inference.
      * Applies letterbox resizing (preserving aspect ratio) and normalizes to 0..1.
      *
-     * @return Pair of the float array (CHW, [3, 640, 640]) and LetterboxInfo for bbox back-calculation
+     * @return Pair of the float array (CHW, [3, 1280, 1280]) and LetterboxInfo for bbox back-calculation
      */
     fun preprocess(bitmap: Bitmap): Pair<FloatArray, LetterboxInfo> {
         val origW = bitmap.width
@@ -32,14 +32,14 @@ object ImagePreprocessor {
         val scaledW = (origW * scale).toInt()
         val scaledH = (origH * scale).toInt()
 
-        // Padding to center the scaled image in a 640x640 canvas
+        // Padding to center the scaled image in a 1280x1280 canvas
         val padX = (INPUT_SIZE - scaledW) / 2f
         val padY = (INPUT_SIZE - scaledH) / 2f
 
         // Scale bitmap
         val scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledW, scaledH, true)
 
-        // Create 640x640 letterboxed bitmap with gray padding
+        // Create 1280x1280 letterboxed bitmap with gray padding
         val letterboxed = Bitmap.createBitmap(INPUT_SIZE, INPUT_SIZE, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(letterboxed)
         canvas.drawColor(Color.rgb(114, 114, 114))

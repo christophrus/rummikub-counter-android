@@ -27,7 +27,7 @@ object NmsProcessor {
         val candidates = mutableListOf<DetectedTile>()
 
         for (pred in predictions) {
-            // pred[0..3] = cx, cy, w, h  (relative to 640x640)
+            // pred[0..3] = cx, cy, w, h  (relative to 1280x1280)
             // pred[4..17] = class confidences for 14 classes
 
             // Find best class
@@ -49,7 +49,7 @@ object NmsProcessor {
             var x2 = cx + w / 2f
             var y2 = cy + h / 2f
 
-            // Map back from letterboxed 640x640 to original image coordinates
+            // Map back from letterboxed 1280x1280 to original image coordinates
             x1 = ((x1 - letterboxInfo.padX) / letterboxInfo.scale).coerceIn(0f, origWidth.toFloat())
             y1 = ((y1 - letterboxInfo.padY) / letterboxInfo.scale).coerceIn(0f, origHeight.toFloat())
             x2 = ((x2 - letterboxInfo.padX) / letterboxInfo.scale).coerceIn(0f, origWidth.toFloat())
