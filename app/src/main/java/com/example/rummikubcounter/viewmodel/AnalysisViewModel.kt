@@ -6,6 +6,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rummikubcounter.ml.ImagePreprocessor
 import com.example.rummikubcounter.ml.NmsProcessor
+import com.example.rummikubcounter.ml.OrientationDetector
+import com.example.rummikubcounter.ml.OrientationPreprocessor
 import com.example.rummikubcounter.ml.YoloDetector
 import com.example.rummikubcounter.model.AnalysisResult
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +30,7 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
     val uiState: StateFlow<AnalysisUiState> = _uiState.asStateFlow()
 
     private val detector: YoloDetector by lazy { YoloDetector(application) }
+    private val orientationDetector: OrientationDetector by lazy { OrientationDetector(application) }
 
     fun analyze(bitmap: Bitmap) {
         viewModelScope.launch(Dispatchers.Default) {
@@ -39,10 +42,21 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                 // Downscale large images to prevent OOM
                 val safeBitmap = ImagePreprocessor.downscaleIfNeeded(bitmap)
 
-                val (inputArray, letterboxInfo) = ImagePreprocessor.preprocess(safeBitmap)
+                // Step 1: Detect and correct orientation
+                val orientationInput = OrientationPreprocessor.preprocess(safeBitmap)
+                val detectedDegrees = orientationDetector.detect(orientationInput)
+                val correctionDegrees = orientationDetector.correctionDegrees(detectedDegrees)
+                val orientedBitmap = if (correctionDegrees != 0) {
+                    ImagePreprocessor.rotateBitmap(safeBitmap, correctionDegrees)
+                } else {
+                    safeBitmap
+                }
+
+                // Step 2: YOLO tile detection
+                val (inputArray, letterboxInfo) = ImagePreprocessor.preprocess(orientedBitmap)
                 val rawOutput = detector.detect(inputArray)
                 val tiles = NmsProcessor.postProcess(
-                    rawOutput, letterboxInfo, safeBitmap.width, safeBitmap.height
+                    rawOutput, letterboxInfo, orientedBitmap.width, orientedBitmap.height
                 )
                 val elapsed = System.currentTimeMillis() - startTime
 
@@ -53,7 +67,7 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        originalBitmap = safeBitmap,
+                        originalBitmap = orientedBitmap,
                         result = AnalysisResult(
                             tiles = tiles,
                             totalScore = totalScore,
@@ -79,6 +93,7 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
 
     override fun onCleared() {
         super.onCleared()
+        orientationDetector.close()
         detector.close()
     }
 }
