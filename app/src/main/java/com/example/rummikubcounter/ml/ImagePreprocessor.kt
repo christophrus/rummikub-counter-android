@@ -14,7 +14,7 @@ data class LetterboxInfo(
 
 object ImagePreprocessor {
 
-    private const val INPUT_SIZE = 1280
+    const val INPUT_SIZE = 1280
     private const val PAD_COLOR_VALUE = 114f / 255f
 
     /**

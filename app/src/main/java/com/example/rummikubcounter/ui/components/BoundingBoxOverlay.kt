@@ -57,8 +57,8 @@ fun BoundingBoxOverlay(
             val boxColor = getTileColor(tile)
             val left = offsetX + tile.x * scale
             val top = offsetY + tile.y * scale
-            val width = tile.width * scale
-            val height = tile.height * scale
+            val width = maxOf(1f, tile.width * scale)
+            val height = maxOf(1f, tile.height * scale)
 
             // Box outline
             drawRect(

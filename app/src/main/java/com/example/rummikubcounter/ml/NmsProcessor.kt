@@ -1,19 +1,22 @@
 package com.example.rummikubcounter.ml
 
+import android.util.Log
 import com.example.rummikubcounter.model.DetectedTile
 
 object NmsProcessor {
 
+    private const val TAG = "NmsProcessor"
+
     /**
-     * Post-processes raw YOLO output: filters by confidence, maps to original image
-     * coordinates, and applies Non-Maximum Suppression.
+     * Post-processes YOLO output that already has built-in NMS applied.
      *
-     * @param predictions  Transposed output [8400, 18] from YoloDetector
+     * @param predictions  Output [300, 6] from YoloDetector with built-in NMS.
+     *                     Each row: [x1, y1, x2, y2, confidence, class_id]
+     *                     Coordinates are in letterbox pixel space (0..1280).
      * @param letterboxInfo Letterbox scaling/padding info for coordinate back-mapping
      * @param origWidth    Original image width
      * @param origHeight   Original image height
      * @param confThreshold Minimum confidence to keep a detection
-     * @param iouThreshold  IoU threshold for NMS
      * @return List of detected tiles, sorted left-to-right
      */
     fun postProcess(
@@ -21,87 +24,68 @@ object NmsProcessor {
         letterboxInfo: LetterboxInfo,
         origWidth: Int,
         origHeight: Int,
-        confThreshold: Float = 0.25f,
-        iouThreshold: Float = 0.45f
+        confThreshold: Float = 0.25f
     ): List<DetectedTile> {
         val candidates = mutableListOf<DetectedTile>()
 
+        // Debug: log first 3 raw outputs
+        for (i in 0 until minOf(3, predictions.size)) {
+            val p = predictions[i]
+            Log.d(TAG, "raw[$i]: x1=${p[0]} y1=${p[1]} x2=${p[2]} y2=${p[3]} conf=${p[4]} cls=${p[5]}")
+        }
+
+        var totalFiltered = 0
+        var confFiltered = 0
+        var clsFiltered = 0
+        var boxFiltered = 0
+
         for (pred in predictions) {
-            // pred[0..3] = cx, cy, w, h  (relative to 1280x1280)
-            // pred[4..17] = class confidences for 14 classes
+            val x1 = pred[0]
+            val y1 = pred[1]
+            val x2 = pred[2]
+            val y2 = pred[3]
+            val confidence = pred[4]
+            val classId = pred[5].toInt()
 
-            // Find best class
-            var bestClassIdx = 0
-            var bestConf = pred[4]
-            for (c in 1..13) {
-                if (pred[4 + c] > bestConf) {
-                    bestConf = pred[4 + c]
-                    bestClassIdx = c
-                }
-            }
+            // Filter out padding detections
+            if (classId < 0 || classId > 13) { clsFiltered++; continue }
+            if (confidence < confThreshold) { confFiltered++; continue }
 
-            if (bestConf < confThreshold) continue
+            // YOLOv8 built-in NMS returns coords in letterbox pixel space (0..1280).
+            // Map back to original image: subtract padding, divide by scale.
+            val origX1 = ((x1 - letterboxInfo.padX) / letterboxInfo.scale).coerceIn(0f, origWidth.toFloat())
+            val origY1 = ((y1 - letterboxInfo.padY) / letterboxInfo.scale).coerceIn(0f, origHeight.toFloat())
+            val origX2 = ((x2 - letterboxInfo.padX) / letterboxInfo.scale).coerceIn(0f, origWidth.toFloat())
+            val origY2 = ((y2 - letterboxInfo.padY) / letterboxInfo.scale).coerceIn(0f, origHeight.toFloat())
 
-            // BBox: center → corner format
-            val cx = pred[0]; val cy = pred[1]; val w = pred[2]; val h = pred[3]
-            var x1 = cx - w / 2f
-            var y1 = cy - h / 2f
-            var x2 = cx + w / 2f
-            var y2 = cy + h / 2f
-
-            // Map back from letterboxed 1280x1280 to original image coordinates
-            x1 = ((x1 - letterboxInfo.padX) / letterboxInfo.scale).coerceIn(0f, origWidth.toFloat())
-            y1 = ((y1 - letterboxInfo.padY) / letterboxInfo.scale).coerceIn(0f, origHeight.toFloat())
-            x2 = ((x2 - letterboxInfo.padX) / letterboxInfo.scale).coerceIn(0f, origWidth.toFloat())
-            y2 = ((y2 - letterboxInfo.padY) / letterboxInfo.scale).coerceIn(0f, origHeight.toFloat())
+            // Ensure valid box (x1 <= x2, y1 <= y2)
+            val minX = minOf(origX1, origX2)
+            val minY = minOf(origY1, origY2)
+            val maxX = maxOf(origX1, origX2)
+            val maxY = maxOf(origY1, origY2)
+            val boxW = (maxX - minX).toInt()
+            val boxH = (maxY - minY).toInt()
+            if (boxW <= 0 || boxH <= 0) { boxFiltered++; continue }
+            totalFiltered++
 
             // Class index 0–12 = tile values 1–13, index 13 = Joker
-            val isJoker = bestClassIdx == 13
-            val number = if (isJoker) null else bestClassIdx + 1
+            val isJoker = classId == 13
+            val number = if (isJoker) null else classId + 1
 
             candidates.add(
                 DetectedTile(
                     number = number,
-                    confidence = bestConf,
+                    confidence = confidence,
                     isJoker = isJoker,
-                    x = x1.toInt(),
-                    y = y1.toInt(),
-                    width = (x2 - x1).toInt(),
-                    height = (y2 - y1).toInt()
+                    x = minX.toInt(),
+                    y = minY.toInt(),
+                    width = boxW,
+                    height = boxH
                 )
             )
         }
 
-        return nms(candidates, iouThreshold)
-    }
-
-    /**
-     * Non-Maximum Suppression: greedily removes overlapping boxes.
-     */
-    private fun nms(boxes: List<DetectedTile>, iouThreshold: Float): List<DetectedTile> {
-        val sorted = boxes.sortedByDescending { it.confidence }.toMutableList()
-        val result = mutableListOf<DetectedTile>()
-
-        while (sorted.isNotEmpty()) {
-            val best = sorted.removeFirst()
-            result.add(best)
-            sorted.removeAll { iou(best, it) > iouThreshold }
-        }
-
-        return result.sortedBy { it.x }
-    }
-
-    private fun iou(a: DetectedTile, b: DetectedTile): Float {
-        val x1 = maxOf(a.x, b.x)
-        val y1 = maxOf(a.y, b.y)
-        val x2 = minOf(a.x + a.width, b.x + b.width)
-        val y2 = minOf(a.y + a.height, b.y + b.height)
-
-        val intersection = maxOf(0, x2 - x1) * maxOf(0, y2 - y1)
-        val areaA = a.width * a.height
-        val areaB = b.width * b.height
-        val union = areaA + areaB - intersection
-
-        return if (union > 0) intersection.toFloat() / union else 0f
+        Log.d(TAG, "Filtered: cls=$clsFiltered conf=$confFiltered box=$boxFiltered → ${candidates.size} tiles")
+        return candidates.sortedBy { it.x }
     }
 }

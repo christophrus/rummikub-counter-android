@@ -14,6 +14,7 @@
     <string name="grant_permission">Berechtigung erteilen</string>
     <string name="no_detections">Keine Steine erkannt</string>
     <string name="error_occurred">Fehler aufgetreten</string>
+    <string name="retry">Erneut versuchen</string>
     <string name="analyzing">Analysiere…</string>
     <string name="points">Punkte</string>
 </resources>

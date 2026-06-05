@@ -3,6 +3,7 @@ package com.example.rummikubcounter.ui.screens
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -58,7 +59,9 @@ import java.io.InputStream
 @Composable
 fun CameraScreen(
     isLoading: Boolean,
+    error: String? = null,
     onImageCaptured: (Bitmap) -> Unit,
+    onRetry: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -157,7 +160,7 @@ fun CameraScreen(
                                     }
 
                                     override fun onError(exception: ImageCaptureException) {
-                                        // Silently handle capture error
+                                        Log.e("CameraScreen", "Image capture failed", exception)
                                     }
                                 }
                             )
@@ -199,6 +202,37 @@ fun CameraScreen(
                             style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier.padding(top = 16.dp)
                         )
+                    }
+                }
+            }
+
+            // Error overlay
+            if (error != null && !isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.7f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(32.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.error_occurred),
+                            color = Color.White,
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                        Spacer(modifier = Modifier.size(12.dp))
+                        Text(
+                            text = error,
+                            color = Color.White.copy(alpha = 0.8f),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.size(24.dp))
+                        Button(onClick = onRetry) {
+                            Text(stringResource(R.string.retry))
+                        }
                     }
                 }
             }

@@ -2,6 +2,7 @@ package com.example.rummikubcounter.viewmodel
 
 import android.app.Application
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rummikubcounter.ml.ImagePreprocessor
@@ -77,10 +78,11 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                     )
                 }
             } catch (e: Exception) {
+                Log.e("AnalysisViewModel", "Analysis failed", e)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Unknown error"
+                        error = e.message ?: "Unbekannter Fehler"
                     )
                 }
             }

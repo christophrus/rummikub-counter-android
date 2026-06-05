@@ -34,8 +34,12 @@ fun RummikubApp(
         composable(Routes.CAMERA) {
             CameraScreen(
                 isLoading = uiState.isLoading,
+                error = uiState.error,
                 onImageCaptured = { bitmap ->
                     viewModel.analyze(bitmap)
+                },
+                onRetry = {
+                    viewModel.reset()
                 }
             )
 

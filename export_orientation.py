@@ -49,6 +49,11 @@ torch.onnx.export(
     opset_version=17,
 )
 
+# Force inline weights (ONNX 1.16+ may auto-use external data)
+import onnx
+onnx_model = onnx.load(OUTPUT_PATH)
+onnx.save(onnx_model, OUTPUT_PATH, save_as_external_data=False)
+
 print(f"Exported to: {OUTPUT_PATH}")
 print(f"Size: {os.path.getsize(OUTPUT_PATH) / (1024*1024):.1f} MB")
 
