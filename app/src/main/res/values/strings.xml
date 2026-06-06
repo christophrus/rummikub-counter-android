@@ -53,4 +53,6 @@
 
     <!-- Navigation -->
     <string name="back">Zurück</string>
+    <string name="close">Schließen</string>
+    <string name="fullscreen_image">Bild in Vollbildansicht</string>
 </resources>

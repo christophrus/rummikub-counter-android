@@ -1,6 +1,7 @@
 package com.example.rummikubcounter.ui.screens
 
 import android.graphics.Bitmap
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +27,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -33,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.example.rummikubcounter.R
 import com.example.rummikubcounter.model.AnalysisResult
 import com.example.rummikubcounter.ui.components.BoundingBoxOverlay
+import com.example.rummikubcounter.ui.components.FullscreenImageDialog
 import com.example.rummikubcounter.ui.components.ScoreDisplay
 import com.example.rummikubcounter.ui.components.TileCard
 
@@ -45,6 +51,8 @@ fun ResultScreen(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var showFullscreen by remember { mutableStateOf(false) }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -88,6 +96,7 @@ fun ResultScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(bitmap.width.toFloat() / bitmap.height.toFloat())
+                        .clickable { showFullscreen = true }
                 ) {
                     BoundingBoxOverlay(
                         bitmap = bitmap,
@@ -135,5 +144,12 @@ fun ResultScreen(
                 Spacer(modifier = Modifier.height(80.dp))
             }
         }
+    }
+
+    if (showFullscreen) {
+        FullscreenImageDialog(
+            bitmap = bitmap,
+            onDismiss = { showFullscreen = false }
+        )
     }
 }
