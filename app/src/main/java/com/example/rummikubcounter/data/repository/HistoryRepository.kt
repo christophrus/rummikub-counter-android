@@ -1,27 +1,49 @@
 package com.example.rummikubcounter.data.repository
 
-import androidx.lifecycle.LiveData
+import android.content.Context
+import android.graphics.Bitmap
 import com.example.rummikubcounter.data.local.AnalysisDao
 import com.example.rummikubcounter.data.local.AnalysisResultEntity
 import com.example.rummikubcounter.data.local.AnalysisResultWithTiles
 import com.example.rummikubcounter.data.local.DetectedTileEntity
 import com.example.rummikubcounter.model.AnalysisResult
 import com.example.rummikubcounter.model.DetectedTile
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 
-class HistoryRepository(private val dao: AnalysisDao) {
+class HistoryRepository(
+    private val dao: AnalysisDao,
+    private val context: Context
+) {
 
     fun getAllResults(): Flow<List<AnalysisResultWithTiles>> {
         return dao.getAllResultsWithTiles()
     }
 
-    suspend fun saveResult(result: AnalysisResult, tiles: List<DetectedTile>) {
+    suspend fun saveResult(result: AnalysisResult, tiles: List<DetectedTile>, bitmap: Bitmap?) {
+        val imageDir = File(context.filesDir, "history_images")
+        if (!imageDir.exists()) imageDir.mkdirs()
+
+        val imagePath: String? = if (bitmap != null) {
+            val fileName = "img_${System.currentTimeMillis()}.jpg"
+            val file = File(imageDir, fileName)
+            withContext(Dispatchers.IO) {
+                FileOutputStream(file).use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 85, out)
+                }
+            }
+            file.absolutePath
+        } else null
+
         val resultEntity = AnalysisResultEntity(
             timestamp = System.currentTimeMillis(),
             totalScore = result.totalScore,
             tileCount = result.tileCount,
             processingTimeMs = result.processingTimeMs,
-            thumbnailPath = null
+            imagePath = imagePath
         )
         val resultId = dao.insertResult(resultEntity)
 
@@ -40,7 +62,16 @@ class HistoryRepository(private val dao: AnalysisDao) {
         dao.insertTiles(tileEntities)
     }
 
+    suspend fun getResultWithTiles(resultId: Long): AnalysisResultWithTiles? {
+        return dao.getResultWithTiles(resultId)
+    }
+
     suspend fun deleteResult(resultId: Long) {
+        // Also delete the saved image file
+        val entry = dao.getResultWithTiles(resultId)
+        entry?.result?.imagePath?.let { path ->
+            File(path).delete()
+        }
         dao.deleteResult(resultId)
     }
 }

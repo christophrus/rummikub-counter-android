@@ -39,7 +39,7 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
     private val orientationDetector: OrientationDetector by lazy { OrientationDetector(application) }
     private val historyRepository: HistoryRepository by lazy {
         val db = AppDatabase.getInstance(application)
-        HistoryRepository(db.analysisDao())
+        HistoryRepository(db.analysisDao(), application)
     }
     private val settingsDataStore: SettingsDataStore by lazy {
         SettingsDataStore(application)
@@ -90,8 +90,8 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                     processingTimeMs = elapsed
                 )
 
-                // Save to history
-                historyRepository.saveResult(result, tiles)
+                // Save to history (with image)
+                historyRepository.saveResult(result, tiles, orientedBitmap)
 
                 _uiState.update {
                     it.copy(

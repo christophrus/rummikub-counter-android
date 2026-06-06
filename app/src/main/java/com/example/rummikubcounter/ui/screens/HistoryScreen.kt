@@ -1,5 +1,6 @@
 package com.example.rummikubcounter.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -47,6 +48,7 @@ import java.util.Locale
 @Composable
 fun HistoryScreen(
     onBack: () -> Unit,
+    onEntryClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: HistoryViewModel = viewModel()
 ) {
@@ -114,6 +116,7 @@ fun HistoryScreen(
                 ) { entry ->
                     HistoryEntryCard(
                         entry = entry,
+                        onClick = { onEntryClick(entry.result.id) },
                         onDelete = { viewModel.deleteEntry(entry.result.id) }
                     )
                 }
@@ -129,13 +132,16 @@ fun HistoryScreen(
 @Composable
 private fun HistoryEntryCard(
     entry: AnalysisResultWithTiles,
+    onClick: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dateFormat = rememberDateFormat()
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
