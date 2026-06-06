@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Button
@@ -62,6 +63,7 @@ fun CameraScreen(
     error: String? = null,
     onImageCaptured: (Bitmap) -> Unit,
     onRetry: () -> Unit = {},
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -83,7 +85,24 @@ fun CameraScreen(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(// Back button (top-left)
+        androidx.compose.material3.IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(top = 16.dp, start = 8.dp)
+                .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+                .size(44.dp)
+        ) {
+            androidx.compose.material3.Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(R.string.back),
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        modifier = modifier.fillMaxSize()) {
         if (cameraPermissionState.status.isGranted) {
             // Camera preview
             val imageCapture = remember { ImageCapture.Builder().build() }

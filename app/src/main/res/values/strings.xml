@@ -17,4 +17,40 @@
     <string name="retry">Erneut versuchen</string>
     <string name="analyzing">Analysiere…</string>
     <string name="points">Punkte</string>
+
+    <!-- Main Menu -->
+    <string name="app_subtitle">Steine erkennen &amp; Punktzahl berechnen</string>
+    <string name="menu_new_photo">Neue Aufnahme</string>
+    <string name="menu_new_photo_desc">Foto aufnehmen oder aus Galerie wählen</string>
+    <string name="menu_history">Verlauf</string>
+    <string name="menu_history_desc">Frühere Auswertungen anzeigen</string>
+    <string name="menu_settings">Einstellungen</string>
+    <string name="menu_settings_desc">Konfidenz-Schwellenwert und Theme</string>
+    <string name="menu_about">Info</string>
+    <string name="menu_about_desc">Version und Technologien</string>
+
+    <!-- History -->
+    <string name="history_title">Verlauf</string>
+    <string name="history_empty">Keine vergangenen Auswertungen</string>
+    <string name="history_empty_hint">Mache eine Aufnahme, um Punkte zu berechnen.</string>
+    <string name="history_score">%d Punkte</string>
+    <string name="history_tiles">%d Steine</string>
+    <string name="history_time">%d ms</string>
+    <string name="history_delete">Löschen</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_confidence">Konfidenz-Schwellenwert</string>
+    <string name="settings_confidence_desc">Mindest-Konfidenz für eine Erkennung (%.0f%%)</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Hell</string>
+    <string name="settings_theme_dark">Dunkel</string>
+
+    <!-- About -->
+    <string name="about_description">Erkennt Rummikub-Steine mit der Kamera und berechnet automatisch die Punktzahl. Läuft vollständig lokal auf dem Gerät – keine Internetverbindung nötig.</string>
+    <string name="about_license">© 2024–2026 Rummikub Counter. Alle Rechte vorbehalten.</string>
+
+    <!-- Navigation -->
+    <string name="back">Zurück</string>
 </resources>

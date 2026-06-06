@@ -5,6 +5,9 @@ import android.graphics.Bitmap
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.rummikubcounter.data.SettingsDataStore
+import com.example.rummikubcounter.data.local.AppDatabase
+import com.example.rummikubcounter.data.repository.HistoryRepository
 import com.example.rummikubcounter.ml.ImagePreprocessor
 import com.example.rummikubcounter.ml.NmsProcessor
 import com.example.rummikubcounter.ml.OrientationDetector
@@ -32,8 +35,20 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
 
     private val detector: YoloDetector by lazy { YoloDetector(application) }
     private val orientationDetector: OrientationDetector by lazy { OrientationDetector(application) }
+    private val historyRepository: HistoryRepository by lazy {
+        val db = AppDatabase.getInstance(application)
+        HistoryRepository(db.analysisDao())
+    }
+    private val settingsDataStore: SettingsDataStore by lazy {
+        SettingsDataStore(application)
+    }
 
     fun analyze(bitmap: Bitmap) {
+        // Read current confidence threshold from settings
+        val confThreshold = kotlinx.coroutines.runBlocking {
+            kotlinx.coroutines.flow.first(settingsDataStore.confidenceThreshold)
+        }
+
         viewModelScope.launch(Dispatchers.Default) {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
@@ -49,7 +64,8 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                 val correctionDegrees = orientationDetector.correctionDegrees(detectedDegrees)
                 val orientedBitmap = if (correctionDegrees != 0) {
                     ImagePreprocessor.rotateBitmap(safeBitmap, correctionDegrees)
-                } else {
+                } else {,
+                    confThreshold = confThreshold
                     safeBitmap
                 }
 
@@ -65,16 +81,21 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                     if (it.isJoker) 20 else (it.number ?: 0)
                 }
 
+                val result = AnalysisResult(
+                    tiles = tiles,
+                    totalScore = totalScore,
+                    tileCount = tiles.size,
+                    processingTimeMs = elapsed
+                )
+
+                // Save to history
+                historyRepository.saveResult(result, tiles)
+
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         originalBitmap = orientedBitmap,
-                        result = AnalysisResult(
-                            tiles = tiles,
-                            totalScore = totalScore,
-                            tileCount = tiles.size,
-                            processingTimeMs = elapsed
-                        )
+                        result = result
                     )
                 }
             } catch (e: Exception) {
