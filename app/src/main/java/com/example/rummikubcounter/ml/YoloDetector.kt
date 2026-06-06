@@ -30,7 +30,7 @@ class YoloDetector(context: Context) {
 
         val results = session.run(mapOf("images" to tensor))
 
-        // Output shape: [1, 300, 6] — YOLOv8 export WITH built-in NMS
+        // Output shape: [1, 300, 6] — YOLO26n (YOLOv11) export WITH built-in NMS
         @Suppress("UNCHECKED_CAST")
         val rawOutput = (results[0].value as Array<Array<FloatArray>>)[0] // [300, 6]
 

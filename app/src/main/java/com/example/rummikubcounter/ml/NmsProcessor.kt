@@ -51,7 +51,7 @@ object NmsProcessor {
             if (classId < 0 || classId > 13) { clsFiltered++; continue }
             if (confidence < confThreshold) { confFiltered++; continue }
 
-            // YOLOv8 built-in NMS returns coords in letterbox pixel space (0..1280).
+            // YOLO26n (YOLOv11) built-in NMS returns coords in letterbox pixel space (0..1280).
             // Map back to original image: subtract padding, divide by scale.
             val origX1 = ((x1 - letterboxInfo.padX) / letterboxInfo.scale).coerceIn(0f, origWidth.toFloat())
             val origY1 = ((y1 - letterboxInfo.padY) / letterboxInfo.scale).coerceIn(0f, origHeight.toFloat())

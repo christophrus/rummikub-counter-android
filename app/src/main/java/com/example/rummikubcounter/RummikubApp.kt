@@ -1,9 +1,9 @@
 package com.example.rummikubcounter
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -90,6 +90,11 @@ fun RummikubApp(
 
         // --- Result ---
         composable(Routes.RESULT) {
+            BackHandler {
+                viewModel.reset()
+                navController.popBackStack()
+            }
+
             val bitmap = uiState.originalBitmap
             val result = uiState.result
             if (bitmap != null && result != null) {
@@ -133,6 +138,11 @@ fun RummikubApp(
 
         // --- History Detail ---
         composable(Routes.HISTORY_DETAIL) {
+            BackHandler {
+                historyViewModel.clearSelection()
+                navController.popBackStack()
+            }
+
             val historyDetailState by historyViewModel.detailState.collectAsState()
             val bitmap = historyDetailState.bitmap
             val result = historyDetailState.result

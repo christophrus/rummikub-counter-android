@@ -109,7 +109,7 @@ fun AboutScreen(
                 "Jetpack Compose + Material 3",
                 "CameraX",
                 "ONNX Runtime",
-                "YOLOv8",
+                "YOLO26n (YOLOv11)",
                 "Kotlin Coroutines",
                 "MVVM Architecture"
             )

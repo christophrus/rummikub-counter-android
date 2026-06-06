@@ -1,7 +1,7 @@
 # Rummikub Counter Android
 
 Native Android-App (Kotlin + Jetpack Compose), die Rummikub-Steine per Kamera oder Galerie-Bild erkennt und die Punktzahl berechnet.
-Die Erkennung läuft lokal auf dem Gerät mit einem vortrainierten YOLOv8-Modell (ONNX Runtime).
+Die Erkennung läuft lokal auf dem Gerät mit einem vortrainierten YOLO26n-Modell (ONNX Runtime).
 
 ## Voraussetzungen
 
