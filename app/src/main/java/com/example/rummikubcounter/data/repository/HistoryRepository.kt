@@ -7,10 +7,11 @@ import com.example.rummikubcounter.data.local.AnalysisResultWithTiles
 import com.example.rummikubcounter.data.local.DetectedTileEntity
 import com.example.rummikubcounter.model.AnalysisResult
 import com.example.rummikubcounter.model.DetectedTile
+import kotlinx.coroutines.flow.Flow
 
 class HistoryRepository(private val dao: AnalysisDao) {
 
-    fun getAllResults(): LiveData<List<AnalysisResultWithTiles>> {
+    fun getAllResults(): Flow<List<AnalysisResultWithTiles>> {
         return dao.getAllResultsWithTiles()
     }
 

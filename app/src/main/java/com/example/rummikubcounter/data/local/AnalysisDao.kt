@@ -5,6 +5,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AnalysisDao {
@@ -17,7 +18,7 @@ interface AnalysisDao {
 
     @Transaction
     @Query("SELECT * FROM analysis_results ORDER BY timestamp DESC")
-    fun getAllResultsWithTiles(): LiveData<List<AnalysisResultWithTiles>>
+    fun getAllResultsWithTiles(): Flow<List<AnalysisResultWithTiles>>
 
     @Transaction
     @Query("SELECT * FROM analysis_results WHERE id = :resultId")

@@ -85,7 +85,8 @@ fun CameraScreen(
         }
     }
 
-    Box(// Back button (top-left)
+    Box(modifier = modifier.fillMaxSize()) {
+        // Back button (top-left)
         androidx.compose.material3.IconButton(
             onClick = onBack,
             modifier = Modifier
@@ -102,7 +103,6 @@ fun CameraScreen(
             )
         }
 
-        modifier = modifier.fillMaxSize()) {
         if (cameraPermissionState.status.isGranted) {
             // Camera preview
             val imageCapture = remember { ImageCapture.Builder().build() }

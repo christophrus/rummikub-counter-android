@@ -18,8 +18,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 data class AnalysisUiState(
     val isLoading: Boolean = false,
@@ -45,8 +47,8 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
 
     fun analyze(bitmap: Bitmap) {
         // Read current confidence threshold from settings
-        val confThreshold = kotlinx.coroutines.runBlocking {
-            kotlinx.coroutines.flow.first(settingsDataStore.confidenceThreshold)
+        val confThreshold = runBlocking {
+            settingsDataStore.confidenceThreshold.first()
         }
 
         viewModelScope.launch(Dispatchers.Default) {
@@ -64,8 +66,7 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                 val correctionDegrees = orientationDetector.correctionDegrees(detectedDegrees)
                 val orientedBitmap = if (correctionDegrees != 0) {
                     ImagePreprocessor.rotateBitmap(safeBitmap, correctionDegrees)
-                } else {,
-                    confThreshold = confThreshold
+                } else {
                     safeBitmap
                 }
 
@@ -73,7 +74,8 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                 val (inputArray, letterboxInfo) = ImagePreprocessor.preprocess(orientedBitmap)
                 val rawOutput = detector.detect(inputArray)
                 val tiles = NmsProcessor.postProcess(
-                    rawOutput, letterboxInfo, orientedBitmap.width, orientedBitmap.height
+                    rawOutput, letterboxInfo, orientedBitmap.width, orientedBitmap.height,
+                    confThreshold = confThreshold
                 )
                 val elapsed = System.currentTimeMillis() - startTime
 
